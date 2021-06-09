@@ -1,5 +1,6 @@
 import pygame
-from shatar import ShatarModel
+from shatar import ShatarModel, fen_to_board
+from pieces import King, Pawn, Tiger
 
 TILESIZE = 64
 BOARD_POS = (0, 0)
@@ -42,6 +43,10 @@ def get_piece(piece):
 def create_board_surf(last_moved_from, last_moved_to):
     board_surf = pygame.Surface((TILESIZE * 8, TILESIZE * 8))
     dark = False
+    skip = False
+    if last_moved_from is None or last_moved_to is None:
+        skip = True
+
     for y in range(8):
         for x in range(8):
             rect = pygame.Rect(x * TILESIZE, y * TILESIZE, TILESIZE, TILESIZE)
@@ -49,10 +54,11 @@ def create_board_surf(last_moved_from, last_moved_to):
             if not dark:
                 c = LIGHT_TILE
 
-            if last_moved_from == (7 - y, x):
-                c = LAST_MOVED_FROM
-            elif last_moved_to == (7 - y, x):
-                c = LAST_MOVED_TO
+            if not skip:
+                if last_moved_from == (7 - y, x):
+                    c = LAST_MOVED_FROM
+                elif last_moved_to == (7 - y, x):
+                    c = LAST_MOVED_TO
 
             pygame.draw.rect(board_surf, c, rect)
             dark = not dark
@@ -119,16 +125,20 @@ def draw_drag(screen, board, selected_piece, font):
         s1 = pygame.transform.smoothscale(s1, (TILESIZE, TILESIZE))
         screen.blit(s1, s1.get_rect(center=pos))
         return x, y
-        # else:
-        #     s1 = font.render(type, True, pygame.Color(color))
-        #     s2 = font.render(type, True, pygame.Color('darkgrey'))
-        #     screen.blit(s2, s2.get_rect(center=pos + (1, 1)))
-        #     screen.blit(s1, s1.get_rect(center=pos))
-        #     return (x, y)
+
+
+TOUGH_BOARD = [[King(), None, None, None, None, None, None, None],
+               [Tiger(), None, None, None, None, None, None, None],
+               [None, None, None, None, None, None, None, None],
+               [None, None, None, None, None, None, Pawn(white=False), None],
+               [None, None, None, None, None, None, None, None],
+               [None, Pawn(), None, None, None, None, None, None],
+               [Pawn(white=False), None, None, None, None, None, None, None],
+               [King(white=False), None, None, None, None, None, None, None]]
 
 
 def main():
-    model = ShatarModel()
+    model = ShatarModel(fen_to_board("7k/6pp/4Qn1P/8/3B4/8/8/K7"), last_moved_from=None, last_moved_to=None)
     pygame.init()
     pygame.display.set_caption('Shatar')
     font = pygame.font.SysFont('', 32)
@@ -138,7 +148,7 @@ def main():
     clock = pygame.time.Clock()
     selected_piece = None
     drop_pos = None
-    while True:
+    while model.is_game_over() == 2:
         piece, x, y = get_square_under_mouse(board)
         events = pygame.event.get()
         for e in events:
@@ -169,6 +179,8 @@ def main():
 
         pygame.display.flip()
         clock.tick(60)
+
+    print(model.is_game_over())
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 KING_DIRECTIONS = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 ROOK_DIRECTIONS = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 KNIGHT_DIRECTIONS = [(2, 1), (2, -1), (1, 2), (1, -2), (-2, 1), (-2, -1), (-1, 2), (-1, -2)]
+BISHOP_DIRECTIONS = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
 
 
 def puts_self_in_check(board, from_row, from_col, to_row, to_col, white):
@@ -30,6 +31,23 @@ def puts_self_in_check(board, from_row, from_col, to_row, to_col, white):
     return in_check
 
 
+def piece_threatens_square(board, row, col, white):
+    """ Returns the piece of the given color that threatens the given square or None
+
+    :param board:
+    :param row:
+    :param col:
+    :param white: the color of the threatener (True if white is threatening the given square)
+    :return:
+    """
+    for i in range(len(board)):
+        for j in range(len(board)):
+            piece = board[i][j]
+            if piece is not None and piece.white == white and piece.is_threatening(board, i, j, row, col):
+                return piece
+    return None
+
+
 def square_is_threatened(board, row, col, white):
     """ True if the given color has a piece that can see the given square
 
@@ -39,12 +57,7 @@ def square_is_threatened(board, row, col, white):
     :param white:
     :return:
     """
-    for i in range(len(board)):
-        for j in range(len(board)):
-            piece = board[i][j]
-            if piece is not None and piece.white == white and piece.is_threatening(board, i, j, row, col):
-                return True
-    return False
+    return piece_threatens_square(board, row, col, white) is not None
 
 
 def is_invalid_indices(row, col):
@@ -203,13 +216,13 @@ class Pawn(Piece):
             row_delta = -1
 
         if self.is_legal_move(board, from_row, from_col, from_row + row_delta, from_col):
-            moves.append(from_row, from_col, from_row + row_delta, from_col)
+            moves.append((from_row, from_col, from_row + row_delta, from_col))
 
         if self.is_legal_move(board, from_row, from_col, from_row + row_delta, from_col + 1):
-            moves.append(from_row, from_col, from_row + row_delta, from_col + 1)
+            moves.append((from_row, from_col, from_row + row_delta, from_col + 1))
 
         if self.is_legal_move(board, from_row, from_col, from_row + row_delta, from_col - 1):
-            moves.append(from_row, from_col, from_row + row_delta, from_col - 1)
+            moves.append((from_row, from_col, from_row + row_delta, from_col - 1))
 
         return moves
 
@@ -244,7 +257,7 @@ class King(Piece):
 
         for direction in KING_DIRECTIONS:
             if self.is_legal_move(board, from_row, from_col, from_row + direction[0], from_col + direction[1]):
-                moves.append(from_row, from_col, from_row + direction[0], from_col + direction[1])
+                moves.append((from_row, from_col, from_row + direction[0], from_col + direction[1]))
 
         return moves
 
@@ -281,8 +294,19 @@ class Rook(Piece):
         if is_invalid_indices(from_row, from_col):
             return []
 
-        # TODO
         moves = []
+
+        for direction in ROOK_DIRECTIONS:
+            count = 1
+            blocked = False
+            while not blocked:
+                to_row = from_row + direction[0] * count
+                to_col = from_col + direction[1] * count
+                if self.is_legal_move(board, from_row, from_col, to_row, to_col):
+                    moves.append((from_row, from_col, to_row, to_col))
+                else:
+                    blocked = True
+                count += 1
 
         return moves
 
@@ -322,8 +346,19 @@ class Bishop(Piece):
         if is_invalid_indices(from_row, from_col):
             return []
 
-        # TODO
         moves = []
+
+        for direction in BISHOP_DIRECTIONS:
+            count = 1
+            blocked = False
+            while not blocked:
+                to_row = from_row + direction[0] * count
+                to_col = from_col + direction[1] * count
+                if self.is_legal_move(board, from_row, from_col, to_row, to_col):
+                    moves.append((from_row, from_col, to_row, to_col))
+                else:
+                    blocked = True
+                count += 1
 
         return moves
 
@@ -353,10 +388,10 @@ class Tiger(Piece):
         if is_invalid_indices(from_row, from_col):
             return []
 
-        # TODO
-        moves = []
+        king_moves = King().generate_legal_moves(board, from_row, from_col)
+        rook_moves = Rook().generate_legal_moves(board, from_row, from_col)
 
-        return moves
+        return list(set().union(king_moves, rook_moves))
 
 
 class Knight(Piece):
@@ -385,7 +420,10 @@ class Knight(Piece):
         if is_invalid_indices(from_row, from_col):
             return []
 
-        # TODO
         moves = []
+
+        for direction in KNIGHT_DIRECTIONS:
+            if self.is_legal_move(board, from_row, from_col, from_row + direction[0], from_col + direction[1]):
+                moves.append((from_row, from_col, from_row + direction[0], from_col + direction[1]))
 
         return moves
