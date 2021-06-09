@@ -1,4 +1,5 @@
 from pieces import Pawn, King, Rook, Bishop, Tiger, Knight, square_is_threatened, find_king, piece_threatens_square
+from copy import deepcopy
 
 NUM_COLS = 8
 # With these constant values for players, flipping ownership is just a sign change
@@ -82,9 +83,9 @@ class ShatarModel(object):
         shak_sequence_white (boolean): True if there is currently a check sequence for white that contains a check by a Rook, Knight, or Tiger (Queen)
     """
 
-    def __init__(self, board=DEFAULT_BOARD, last_moved_from=(6, 3), last_moved_to=(4, 3)):
+    def __init__(self, board=DEFAULT_BOARD, last_moved_from=(6, 3), last_moved_to=(4, 3), to_play=WHITE_TO_PLAY):
         self.board = board
-        self.to_play = WHITE_TO_PLAY
+        self.to_play = to_play
         self.last_moved_from = last_moved_from
         self.last_moved_to = last_moved_to
         self.shak_sequence_white = False
@@ -109,7 +110,8 @@ class ShatarModel(object):
             raise ValueError("This piece is the wrong color to move!")
 
         if not piece.is_legal_move(self.board, from_row, from_col, to_row, to_col):
-            raise ValueError("Piece: " + str(piece) + " cannot make this move!")
+            raise ValueError(
+                "Piece: " + str(piece) + " cannot make this move! " + f'{from_row}, {from_col}, {to_row}, {to_col}')
 
         if from_row == to_row and from_col == to_col:
             raise ValueError("Can't move to the same square")
@@ -187,8 +189,18 @@ class ShatarModel(object):
 
         :return: (2d list) current Shatar board
         """
-        # TODO - make a copy of the board probably
-        return self.board
+        new_board = []
+        for i in range(len(self.board)):
+            row = []
+            for j in range(len(self.board[0])):
+                piece = self.board[i][j]
+                if piece is None:
+                    row.append(None)
+                else:
+                    row.append(deepcopy(piece))
+            new_board.append(row)
+
+        return new_board
 
     def is_game_over(self):
         """ Determines if the game is over
@@ -271,4 +283,3 @@ TOUGH_BOARD = [[King(), None, None, None, None, None, None, None],
 # x = fen_to_board("rnbq2nr/pp1ppppp/4b3/2k5/3P1p2/8/PPP1PPPP/RNBQKBNR")
 # fen = "rnbq2nr/pp1ppppp/4b3/2k5/3P1p2/8/PPP1PPPP/RNBQKBNR"
 # print(x)
-

@@ -163,7 +163,7 @@ class Pawn(Piece):
     """ Represents a pawn in a game of Shatar. """
 
     def __init__(self, white=True):
-        super().__init__(white)
+        super().__init__(white=white)
 
     def __str__(self):
         if self.white:
@@ -315,7 +315,7 @@ class Bishop(Piece):
     """ Represents a Bishop in a game of Shatar."""
 
     def __init__(self, white=True):
-        super().__init__(white)
+        super().__init__(white=white)
 
     def __str__(self):
         if self.white:
@@ -376,7 +376,7 @@ class Tiger(Piece):
             return 'q'
 
     def is_threatening(self, board, from_row, from_col, to_row, to_col):
-        if Rook().is_threatening(board, from_row, from_col, to_row, to_col) or \
+        if Rook(white=self.white).is_threatening(board, from_row, from_col, to_row, to_col) or \
                 king_knight_move_helper(board, KING_DIRECTIONS, from_row, from_col, to_row, to_col, self.white):
             return True
 
@@ -388,8 +388,8 @@ class Tiger(Piece):
         if is_invalid_indices(from_row, from_col):
             return []
 
-        king_moves = King().generate_legal_moves(board, from_row, from_col)
-        rook_moves = Rook().generate_legal_moves(board, from_row, from_col)
+        king_moves = King(white=self.white).generate_legal_moves(board, from_row, from_col)
+        rook_moves = Rook(white=self.white).generate_legal_moves(board, from_row, from_col)
 
         return list(set().union(king_moves, rook_moves))
 
@@ -398,7 +398,7 @@ class Knight(Piece):
     """ Represents a Knight in a game of Shatar."""
 
     def __init__(self, white=True):
-        super().__init__(white)
+        super().__init__(white=white)
 
     def __str__(self):
         if self.white:
