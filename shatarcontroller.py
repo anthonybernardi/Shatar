@@ -1,11 +1,12 @@
 import pygame
 from shatarview import ShatarView, get_square_under_mouse, draw_drag
 from shatar import ShatarModel, fen_to_board
-from basic_ai import RandomPlayer, GreedyPlayer
+from basic_ai import RandomPlayer, GreedyPlayer, PacifistPlayer
 from time import sleep
+from shatarview import TILESIZE
 
-TILESIZE = 64
 BOARD_POS = (0, 0)
+SLEEP_TIME = 0.2
 
 
 class ShatarController(object):
@@ -29,16 +30,14 @@ class ShatarController(object):
         drop_pos = None
 
         while self.model.is_game_over() == 2:
-            view.draw(screen, board, self.model.last_moved_from, self.model.last_moved_to, selected_piece)
-
             if self.model.to_play and not white_playable:
-                move = white_player.get_move()
-                sleep(1)
+                move = white_player.get_move(self.model)
+                sleep(SLEEP_TIME)
                 self.model.move(move[0], move[1], move[2], move[3])
                 board = self.model.get_board()
             elif not self.model.to_play and not black_playable:
-                move = black_player.get_move()
-                sleep(1)
+                move = black_player.get_move(self.model)
+                sleep(SLEEP_TIME)
                 self.model.move(move[0], move[1], move[2], move[3])
                 board = self.model.get_board()
 
@@ -68,7 +67,7 @@ class ShatarController(object):
                     drop_pos = None
 
             # draw the board
-            # view.draw(screen, board, self.model.last_moved_from, self.model.last_moved_to, selected_piece)
+            view.draw(screen, board, self.model.last_moved_from, self.model.last_moved_to, selected_piece)
             # draw the dragging piece and update its position
             if selected_piece:
                 drop_pos = draw_drag(screen, board, selected_piece)
@@ -78,11 +77,64 @@ class ShatarController(object):
 
         print(self.model.is_game_over())
 
+        while True:
+            events = pygame.event.get()
+            for e in events:
+                if e.type == pygame.QUIT:
+                    return
+            # draw the board
+            view.draw(screen, board, self.model.last_moved_from, self.model.last_moved_to, selected_piece)
+
+            pygame.display.flip()
+            clock.tick(10)
+
+    def simulate_game(self, white_player, black_player):
+        sim_model = ShatarModel(board=self.model.get_board(), to_play=self.model.to_play)
+
+        while sim_model.is_game_over() == 2:
+            if sim_model.to_play:
+                move = white_player.get_move(sim_model)
+            else:
+                move = black_player.get_move(sim_model)
+
+            sim_model.move(move[0], move[1], move[2], move[3])
+
+        # print(f'Game had: {sim_model.total_moves} total moves')
+
+        return sim_model.is_game_over()
+
+
+def simulate_n_games(white_player, black_player, n):
+    white_win = 0
+    black_win = 0
+    draw = 0
+
+    for i in range(n):
+        model = ShatarModel()
+        controller = ShatarController(model)
+        w = controller.simulate_game(white_player, black_player)
+        if w == 1:
+            white_win += 1
+        elif w == 0:
+            draw += 1
+        elif w == -1:
+            black_win += 1
+
+    print(f'White won: {white_win} games')
+    print(f'Black won: {black_win} games')
+    print(f'There were: {draw} drawn games')
+
 
 def main():
+    fen = "k6p/7P/8/8/8/8/8/K7"
     model = ShatarModel()
+
+    white_player = GreedyPlayer(True)
+    black_player = PacifistPlayer(False)
+
     controller = ShatarController(model)
-    controller.play_game(RandomPlayer(model, True), GreedyPlayer(model, False))
+    controller.play_game(white_player, black_player)
+    # simulate_n_games(white_player, black_player, 20)
 
 
 if __name__ == '__main__':

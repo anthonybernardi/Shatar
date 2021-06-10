@@ -90,6 +90,8 @@ class ShatarModel(object):
         self.last_moved_to = last_moved_to
         self.shak_sequence_white = False
         self.shak_sequence_black = False
+        self.moves_since_last_capture = 0
+        self.total_moves = 0
 
     def move(self, from_row, from_col, to_row, to_col):
         """ Move on the board from the given square to the other given square.
@@ -116,12 +118,24 @@ class ShatarModel(object):
         if from_row == to_row and from_col == to_col:
             raise ValueError("Can't move to the same square")
 
+        if self.board[to_row][to_col] is not None:
+            self.moves_since_last_capture = 0
+        else:
+            self.moves_since_last_capture += 1
+
         self.board[to_row][to_col] = self.board[from_row][from_col]
         self.board[from_row][from_col] = None
 
         if (str(piece) == 'P' and to_row == 7) or (str(piece) == 'p' and to_row == 0):
             self.board[to_row][to_col] = Tiger(white=piece.white)
 
+        self.update_checking_sequence()
+        self.total_moves += 1
+        self.last_moved_from = from_row, from_col
+        self.last_moved_to = to_row, to_col
+        self.to_play = not self.to_play
+
+    def update_checking_sequence(self):
         # if the opposite color of what just played is now in check:
         checking_piece = self.get_piece_causing_check(not self.to_play)
         if checking_piece is not None:
@@ -139,10 +153,6 @@ class ShatarModel(object):
             else:
                 self.shak_sequence_black = False
         # at the end of this, black could be in checkmate and white could have a True shak sequence and it would be gg
-
-        self.last_moved_from = from_row, from_col
-        self.last_moved_to = to_row, to_col
-        self.to_play = not self.to_play
 
     def get_piece_at(self, row, col):
         """ Get the piece at the given row and column on this board
@@ -231,6 +241,10 @@ class ShatarModel(object):
                 # opposite
                 else:
                     return 1
+
+        # if no captures in 50 moves: draw
+        if self.moves_since_last_capture >= 100:
+            return 0
 
         # there actually are legal moves and it's not a draw so the game is not over
         return 2

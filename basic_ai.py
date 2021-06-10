@@ -15,47 +15,46 @@ def count_material_evaluation(board):
 
 
 class ShatarAI(object):
-    def __init__(self, model, white):
-        self.model = model
+    def __init__(self, white):
         self.white = white
 
 
 class RandomPlayer(ShatarAI):
-    def __init__(self, model, white):
-        super().__init__(model, white)
+    def __init__(self, white):
+        super().__init__(white)
 
-    def get_move(self):
-        if self.model.to_play is not self.white:
+    def get_move(self, model):
+        if model.to_play is not self.white:
             raise ValueError("Trying to play on wrong turn!")
 
-        candidate_moves = self.model.generate_legal_moves()
+        candidate_moves = model.generate_legal_moves()
 
         return random.choice(candidate_moves)
 
 
 class GreedyPlayer(ShatarAI):
-    def __init__(self, model, white):
-        super().__init__(model, white)
+    def __init__(self, white):
+        super().__init__(white)
 
-    def get_move(self):
-        if self.model.to_play is not self.white:
+    def get_move(self, model):
+        if model.to_play is not self.white:
             raise ValueError("Trying to play on wrong turn!")
 
-        candidate_moves = self.model.generate_legal_moves()
+        candidate_moves = model.generate_legal_moves()
 
         # if there are a lot of moves with the same eval, we want to choose a random one
         best_moves_to_choose_from = []
 
         # Set up the first one so that I can max it later
         best_move = candidate_moves[0]
-        board = self.model.get_board()
+        board = model.get_board()
         test_model = ShatarModel(board=board, to_play=self.white)
         test_model.move(best_move[0], best_move[1], best_move[2], best_move[3])
         best_move_eval = count_material_evaluation(test_model.get_board())
         best_moves_to_choose_from.append(best_move)
 
         for move in candidate_moves:
-            board = self.model.get_board()
+            board = model.get_board()
             test_model = ShatarModel(board=board, to_play=self.white)
             test_model.move(move[0], move[1], move[2], move[3])
             curr_eval = count_material_evaluation(test_model.get_board())
@@ -88,3 +87,29 @@ class GreedyPlayer(ShatarAI):
                     best_moves_to_choose_from = [move]
 
         return random.choice(best_moves_to_choose_from)
+
+
+class PacifistPlayer(ShatarAI):
+    """
+    AI that will randomly choose from moves that don't capture a piece.
+    Randomly chooses a capturing move if that's the only option.
+    """
+
+    def __init__(self, white):
+        super().__init__(white)
+
+    def get_move(self, model):
+        if model.to_play is not self.white:
+            raise ValueError("Trying to play on wrong turn!")
+
+        candidate_moves = model.generate_legal_moves()
+        pacifist_moves = []
+
+        for move in candidate_moves:
+            if model.get_piece_at(move[2], move[3]) is None:
+                pacifist_moves.append(move)
+
+        if len(pacifist_moves) == 0:
+            return random.choice(candidate_moves)
+
+        return random.choice(pacifist_moves)
