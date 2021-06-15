@@ -43,7 +43,7 @@ def piece_threatens_square(board, row, col, white):
     for i in range(len(board)):
         for j in range(len(board)):
             piece = board[i][j]
-            if piece is not None and piece.white == white and piece.is_threatening(board, i, j, row, col):
+            if piece is not None and piece.white is white and piece.is_threatening(board, i, j, row, col):
                 return piece
     return None
 
@@ -80,14 +80,10 @@ def find_king(board, white):
     :param white: (boolean) True if find white King, otherwise False
     :return: tuple (row, col) of King
     """
-    s = 'k'
-    if white:
-        s = 'K'
-
     for i in range(len(board)):
         for j in range(len(board)):
             piece = board[i][j]
-            if str(piece) is s:
+            if isinstance(piece, King):
                 return i, j
 
 
@@ -115,6 +111,9 @@ def get_piece_delta(row_diff, col_diff):
 
 
 def rook_bishop_move_helper(board, from_row, from_col, to_row, to_col, row_diff, col_diff, white):
+    if is_invalid_indices(from_row, from_col) or is_invalid_indices(to_row, to_col):
+        return False
+
     delta = get_piece_delta(row_diff, col_diff)
 
     for i in range(1, max(abs(row_diff), abs(col_diff))):
@@ -131,6 +130,9 @@ def rook_bishop_move_helper(board, from_row, from_col, to_row, to_col, row_diff,
 
 
 def king_knight_move_helper(board, directions, from_row, from_col, to_row, to_col, white):
+    if is_invalid_indices(from_row, from_col) or is_invalid_indices(to_row, to_col):
+        return False
+
     row_diff = to_row - from_row
     col_diff = to_col - from_col
 
@@ -206,8 +208,8 @@ class Pawn(Piece):
         :param from_col:
         :return: returns a list of legal moves in format [(from_row, from_col, to_row, to_col), ...]
         """
-        if is_invalid_indices(from_row, from_col):
-            return []
+        # if is_invalid_indices(from_row, from_col):
+        #     return []
 
         moves = []
 
@@ -240,8 +242,8 @@ class King(Piece):
             return 'k'
 
     def is_threatening(self, board, from_row, from_col, to_row, to_col):
-        if is_invalid_indices(to_row, to_col) or is_invalid_indices(from_row, from_col):
-            return False
+        # if is_invalid_indices(to_row, to_col) or is_invalid_indices(from_row, from_col):
+        #     return False
 
         return king_knight_move_helper(board, KING_DIRECTIONS, from_row, from_col, to_row, to_col, self.white)
 
@@ -250,8 +252,8 @@ class King(Piece):
 
         :return: returns a list of legal moves in format [(from_row, from_col, to_row, to_col), ...]
         """
-        if is_invalid_indices(from_row, from_col):
-            return []
+        # if is_invalid_indices(from_row, from_col):
+        #     return []
 
         moves = []
 
@@ -275,8 +277,8 @@ class Rook(Piece):
             return 'r'
 
     def is_threatening(self, board, from_row, from_col, to_row, to_col):
-        if is_invalid_indices(to_row, to_col) or is_invalid_indices(from_row, from_col):
-            return False
+        # if is_invalid_indices(to_row, to_col) or is_invalid_indices(from_row, from_col):
+        #     return False
 
         row_diff = to_row - from_row
         col_diff = to_col - from_col
@@ -291,8 +293,8 @@ class Rook(Piece):
 
         :return: returns a list of legal moves in format [(from_row, from_col, to_row, to_col), ...]
         """
-        if is_invalid_indices(from_row, from_col):
-            return []
+        # if is_invalid_indices(from_row, from_col):
+        #     return []
 
         moves = []
 
@@ -324,8 +326,8 @@ class Bishop(Piece):
             return 'b'
 
     def is_threatening(self, board, from_row, from_col, to_row, to_col):
-        if is_invalid_indices(to_row, to_col) or is_invalid_indices(from_row, from_col):
-            return False
+        # if is_invalid_indices(to_row, to_col) or is_invalid_indices(from_row, from_col):
+        #     return False
 
         row_diff = to_row - from_row
         col_diff = to_col - from_col
@@ -343,8 +345,8 @@ class Bishop(Piece):
 
         :return: returns a list of legal moves in format [(from_row, from_col, to_row, to_col), ...]
         """
-        if is_invalid_indices(from_row, from_col):
-            return []
+        # if is_invalid_indices(from_row, from_col):
+        #     return []
 
         moves = []
 
@@ -385,8 +387,8 @@ class Tiger(Piece):
 
         :return: returns a list of legal moves in format [(from_row, from_col, to_row, to_col), ...]
         """
-        if is_invalid_indices(from_row, from_col):
-            return []
+        # if is_invalid_indices(from_row, from_col):
+        #     return []
 
         king_moves = King(white=self.white).generate_legal_moves(board, from_row, from_col)
         rook_moves = Rook(white=self.white).generate_legal_moves(board, from_row, from_col)
@@ -407,8 +409,8 @@ class Knight(Piece):
             return 'n'
 
     def is_threatening(self, board, from_row, from_col, to_row, to_col):
-        if is_invalid_indices(to_row, to_col) or is_invalid_indices(from_row, from_col):
-            return False
+        # if is_invalid_indices(to_row, to_col) or is_invalid_indices(from_row, from_col):
+        #     return False
 
         return king_knight_move_helper(board, KNIGHT_DIRECTIONS, from_row, from_col, to_row, to_col, self.white)
 
@@ -417,8 +419,8 @@ class Knight(Piece):
 
         :return: returns a list of legal moves in format [(from_row, from_col, to_row, to_col), ...]
         """
-        if is_invalid_indices(from_row, from_col):
-            return []
+        # if is_invalid_indices(from_row, from_col):
+        #     return []
 
         moves = []
 

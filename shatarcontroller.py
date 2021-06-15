@@ -6,7 +6,7 @@ from time import sleep
 from shatarview import TILESIZE
 
 BOARD_POS = (0, 0)
-SLEEP_TIME = 0.2
+SLEEP_TIME = .1
 
 
 class ShatarController(object):
@@ -130,11 +130,11 @@ def main():
     model = ShatarModel()
 
     white_player = GreedyPlayer(True)
-    black_player = PacifistPlayer(False)
+    black_player = RandomPlayer(False)
 
     controller = ShatarController(model)
-    controller.play_game(white_player, black_player)
-    # simulate_n_games(white_player, black_player, 20)
+    # controller.play_game(white_player, black_player)
+    simulate_n_games(white_player, black_player, 10)
 
 
 if __name__ == '__main__':

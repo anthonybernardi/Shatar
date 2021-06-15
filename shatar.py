@@ -1,5 +1,6 @@
-from pieces import Pawn, King, Rook, Bishop, Tiger, Knight, square_is_threatened, find_king, piece_threatens_square
-from copy import deepcopy
+from pieces import Pawn, King, Rook, Bishop, Tiger, Knight, square_is_threatened, find_king, piece_threatens_square, \
+    is_invalid_indices
+from copy import deepcopy, copy
 
 NUM_COLS = 8
 # With these constant values for players, flipping ownership is just a sign change
@@ -108,6 +109,9 @@ class ShatarModel(object):
         if piece is None:
             raise ValueError("Piece to move does not exist!")
 
+        if is_invalid_indices(to_row, to_col) or is_invalid_indices(from_row, from_col):
+            return False
+
         if not (piece.white == self.to_play):
             raise ValueError("This piece is the wrong color to move!")
 
@@ -207,7 +211,7 @@ class ShatarModel(object):
                 if piece is None:
                     row.append(None)
                 else:
-                    row.append(deepcopy(piece))
+                    row.append(copy(piece))
             new_board.append(row)
 
         return new_board
