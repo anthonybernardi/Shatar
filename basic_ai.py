@@ -1,7 +1,7 @@
 import math
 import random
 
-#import numpy as np
+# import numpy as np
 
 from shatar import ShatarModel
 
@@ -134,7 +134,6 @@ class MCTSPlayer(ShatarAI):
         super().__init__(white)
 
     def get_move(self, model):
-
         if model.to_play is not self.white:
             raise ValueError("Trying to play on wrong turn!")
 
@@ -150,7 +149,7 @@ def get_greedy_move(model, candidate_moves):
     :return:
     """
 
-    #if model.to_play is not self.white:
+    # if model.to_play is not self.white:
     #    raise ValueError("Trying to play on wrong turn!")
 
     # this is not a player class so it doesn't have self.white
@@ -204,6 +203,75 @@ def get_greedy_move(model, candidate_moves):
     return random.choice(best_moves_to_choose_from)
 
 
+### ZOBRIST HASHING:
+# https://en.wikipedia.org/wiki/Zobrist_hashing
+# https://levelup.gitconnected.com/zobrist-hashing-305c6c3c54d0
+
+# https://github.com/niklasf/python-chess/blob/master/chess/polyglot.py
+# here's an example I don't really understand that uses some weird libraries? idk
+
+# will use transposition tables (HashMap) as a cache to store already seen board positions
+
+# used pseudocode on Wikipedia to write two functions below
+
+white_pawn = 1
+white_rook = 2
+white_knight = 3
+white_bishop = 4
+white_tiger = 5
+white_king = 6
+black_pawn = 7
+black_rook = 8
+black_knight = 9
+black_bishop = 10
+black_tiger = 11
+black_king = 12
+
+
+def init_zobrist():
+    # fill a table of random numbers/bitstrings
+    table = [64][12]
+    for i in range(64):  # loop over the board, represented as a linear array
+        for j in range(12):  # loop over the pieces
+            table[i][j] = random.getrandbits(64)
+
+
+def hash(board):
+    h = 0
+    for i in range(64):  # loop over the board, represented as a linear array
+        if board[i] is not None:
+            piece_hash = 0
+            if board[i].__str__() == 'P':
+                piece_hash = white_pawn
+            if board[i].__str__() == 'R':
+                piece_hash = white_rook
+            if board[i].__str__() == 'N':
+                piece_hash = white_knight
+            if board[i].__str__() == 'B':
+                piece_hash = white_bishop
+            if board[i].__str__() == 'Q':
+                piece_hash = white_tiger
+            if board[i].__str__() == 'K':
+                piece_hash = white_king
+            if board[i].__str__() == 'p':
+                piece_hash = black_pawn
+            if board[i].__str__() == 'r':
+                piece_hash = black_rook
+            if board[i].__str__() == 'n':
+                piece_hash = black_knight
+            if board[i].__str__() == 'b':
+                piece_hash = black_bishop
+            if board[i].__str__() == 'q':
+                piece_hash = black_tiger
+            if board[i].__str__() == 'k':
+                piece_hash = black_king
+
+            # h = h XOR table[i][j]
+            h = h ^ piece_hash
+
+    return h
+
+
 class GameTree:
     """
     A class representing a tree in Monte Carlo tree search
@@ -242,7 +310,6 @@ class GameTree:
 
         # while the game is not over
         while current_state.is_game_over() != 2:
-
             possible_moves = current_state.generate_legal_moves()
             action = self.rollout_policy(current_state, possible_moves)
             current_state = current_state.move(action)
@@ -254,7 +321,7 @@ class GameTree:
     def backpropagate(self, result):
         self.num_sims += 1
         if result == 1:
-            self.num_wins +=1
+            self.num_wins += 1
         if self.parent:
             self.parent.backpropagate(result)
 
@@ -303,16 +370,3 @@ class GameTree:
                 current_node = current_node.best_child()
 
         return current_node
-
-
-
-
-
-
-
-
-
-
-
-
-
