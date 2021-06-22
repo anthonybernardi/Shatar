@@ -83,7 +83,7 @@ def find_king(board, white):
     for i in range(len(board)):
         for j in range(len(board)):
             piece = board[i][j]
-            if isinstance(piece, King):
+            if isinstance(piece, King) and piece.white == white:
                 return i, j
 
 

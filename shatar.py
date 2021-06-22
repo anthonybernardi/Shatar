@@ -113,7 +113,7 @@ class ShatarModel(object):
             return False
 
         if not (piece.white == self.to_play):
-            raise ValueError("This piece is the wrong color to move!")
+            raise ValueError("This piece is the wrong color to move! Piece.white =" + str(piece.white))
 
         if not piece.is_legal_move(self.board, from_row, from_col, to_row, to_col):
             raise ValueError(

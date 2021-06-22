@@ -1,7 +1,7 @@
 import pygame
 from shatarview import ShatarView, get_square_under_mouse, draw_drag
 from shatar import ShatarModel, fen_to_board
-from basic_ai import RandomPlayer, GreedyPlayer, PacifistPlayer
+from basic_ai import RandomPlayer, GreedyPlayer, PacifistPlayer, MCTSPlayer
 from time import sleep
 from shatarview import TILESIZE
 
@@ -129,12 +129,13 @@ def main():
     fen = "k6p/7P/8/8/8/8/8/K7"
     model = ShatarModel()
 
-    white_player = GreedyPlayer(True)
-    black_player = RandomPlayer(False)
+    white_player = None
+    black_player = MCTSPlayer(False)
+    black_player.set_simulation_number(10)
 
     controller = ShatarController(model)
-    # controller.play_game(white_player, black_player)
-    simulate_n_games(white_player, black_player, 10)
+    controller.play_game(white_player, black_player)
+    # simulate_n_games(white_player, black_player, 10)
 
 
 if __name__ == '__main__':
