@@ -6,6 +6,9 @@ import random
 from shatar import ShatarModel
 
 MATERIAL_VALUE = {'k': 0, 'K': 0, 'p': -1, 'P': 1, 'q': -7, 'Q': 7, 'r': -5, 'R': 5, 'b': -3, 'B': 3, 'n': -3, 'N': 3}
+MOVES_PER_SIMULATION = 50
+WINNING_POSITION_VALUE = 2
+C_CONSTANT = 4
 
 
 def count_material_evaluation(board):
@@ -175,65 +178,70 @@ def get_greedy_move(model, candidate_moves):
     board = model.get_board()
     board_hash = hash(board, model.to_play)
 
-    if board_hash in hash_to_best_moves:
-        best_moves_to_choose_from = hash_to_best_moves[board_hash]
-    else:
-        # if we have not evaluated this board before
+    # TODO - Add hash back in when it works
+    # if board_hash in hash_to_best_moves:
+    #     best_moves_to_choose_from = hash_to_best_moves[board_hash]
+    # else:
+    # if we have not evaluated this board before
 
-        # Set up the first one so that I can max it later
-        best_move = candidate_moves[0]
+    # Set up the first one so that I can max it later
+    best_move = candidate_moves[0]
 
+    test_model = model_copier(model)
+    test_model.move(best_move[0], best_move[1], best_move[2], best_move[3])
+
+    test_board = test_model.get_board()
+    test_board_hash = hash(test_board, test_model.to_play)
+
+    best_move_eval = count_material_evaluation(test_board)
+    best_moves_to_choose_from.append(best_move)
+
+    for move in candidate_moves:
         test_model = model_copier(model)
-        test_model.move(best_move[0], best_move[1], best_move[2], best_move[3])
+        test_model.move(move[0], move[1], move[2], move[3])
 
         test_board = test_model.get_board()
         test_board_hash = hash(test_board, test_model.to_play)
 
-        best_move_eval = count_material_evaluation(test_board)
-        best_moves_to_choose_from.append(best_move)
+        # TODO - put back in hash when it works
+        # if test_board_hash not in hash_to_eval:
+        #     hash_to_eval[test_board_hash] = count_material_evaluation(test_model.get_board())
+        #
+        # curr_eval = hash_to_eval[test_board_hash]
+        #
+        # if test_board_hash not in hash_to_is_game_over:
+        #     hash_to_is_game_over[test_board_hash] = test_model.is_game_over()
+        # gg = hash_to_is_game_over[test_board_hash]
 
-        for move in candidate_moves:
-            test_model = model_copier(model)
-            test_model.move(move[0], move[1], move[2], move[3])
+        curr_eval = count_material_evaluation(test_model.board)
+        gg = test_model.is_game_over()
 
-            test_board = test_model.get_board()
-            test_board_hash = hash(test_board, test_model.to_play)
+        if model.to_play:
 
-            if test_board_hash not in hash_to_eval:
-                hash_to_eval[test_board_hash] = count_material_evaluation(test_model.get_board())
+            if gg == 1:
+                return move
+            if gg == -1 or 0:
+                continue
 
-            curr_eval = hash_to_eval[test_board_hash]
+            if curr_eval == best_move_eval:
+                best_moves_to_choose_from.append(move)
+            elif curr_eval > best_move_eval:
+                best_move = move
+                best_move_eval = curr_eval
+                best_moves_to_choose_from = [move]
+        else:
 
-            if test_board_hash not in hash_to_is_game_over:
-                hash_to_is_game_over[test_board_hash] = test_model.is_game_over()
-            gg = hash_to_is_game_over[test_board_hash]
+            if gg == -1:
+                return move
+            if gg == 1 or 0:
+                continue
 
-            if model.to_play:
-
-                if gg == 1:
-                    return move
-                if gg == -1 or 0:
-                    continue
-
-                if curr_eval == best_move_eval:
-                    best_moves_to_choose_from.append(move)
-                elif curr_eval > best_move_eval:
-                    best_move = move
-                    best_move_eval = curr_eval
-                    best_moves_to_choose_from = [move]
-            else:
-
-                if gg == -1:
-                    return move
-                if gg == 1 or 0:
-                    continue
-
-                if curr_eval == best_move_eval:
-                    best_moves_to_choose_from.append(move)
-                elif curr_eval < best_move_eval:
-                    best_move = move
-                    best_move_eval = curr_eval
-                    best_moves_to_choose_from = [move]
+            if curr_eval == best_move_eval:
+                best_moves_to_choose_from.append(move)
+            elif curr_eval < best_move_eval:
+                best_move = move
+                best_move_eval = curr_eval
+                best_moves_to_choose_from = [move]
 
     return random.choice(best_moves_to_choose_from)
 
@@ -331,6 +339,7 @@ class GameTree:
 
     # https://ai-boson.github.io/mcts/
     def get_untried_actions(self):
+        # TODO - Add back in when hash works
         # if self.board_hash not in hash_to_legal_moves:
         #     hash_to_legal_moves[self.board_hash] = self.model.generate_legal_moves()
         #
@@ -340,14 +349,12 @@ class GameTree:
     def expansion(self):
         """ Returns a random untried child node
 
-        # TODO - actually make it random
-
         :return:
         """
 
-        # not sure if pop is the best thing here?
-        # actually it probably is because you want to expand until untried_actions is empty
-        action = self.untried_actions.pop()
+        action = random.choice(self.untried_actions)
+        self.untried_actions.remove(action)
+
         next_model = self.model_copier()
         next_model.move(action[0], action[1], action[2], action[3])
         child = GameTree(model=next_model, parent=self, parent_action=action, white=self.white)
@@ -355,12 +362,15 @@ class GameTree:
         return child
 
     def is_terminal_node(self):
-        board_hash = hash(self.model.board, self.model.to_play)
+        # TODO - put hashing back in when it works
+        return self.model.is_game_over()
 
-        if board_hash not in hash_to_is_game_over:
-            hash_to_is_game_over[board_hash] = self.model.is_game_over()
-
-        return hash_to_is_game_over[board_hash]
+        # board_hash = hash(self.model.board, self.model.to_play)
+        #
+        # if board_hash not in hash_to_is_game_over:
+        #     hash_to_is_game_over[board_hash] = self.model.is_game_over()
+        #
+        # return hash_to_is_game_over[board_hash]
 
     def backpropagate(self, result):
         self.num_sims += 1
@@ -369,6 +379,8 @@ class GameTree:
             self.num_wins += 1
         elif result == -1 and not self.white:
             self.num_wins += 1
+        elif result == 0:
+            self.num_wins += 0.5
 
         if self.parent:
             self.parent.backpropagate(result)
@@ -395,29 +407,43 @@ class GameTree:
     # rollout
     def simulation(self):
         current_state = self.model_copier()
-        print('current_state.to_play=' + str(current_state.to_play))
+        starting_move = current_state.total_moves
 
         # while the game is not over
-        while current_state.is_game_over() == 2:
-            board_hash = hash(current_state.board, current_state.to_play)
-            if board_hash not in hash_to_legal_moves:
-                hash_to_legal_moves[board_hash] = current_state.generate_legal_moves()
+        while current_state.is_game_over() == 2 and not (
+                current_state.total_moves - starting_move > MOVES_PER_SIMULATION):
+            # board_hash = hash(current_state.board, current_state.to_play)
+            # if board_hash not in hash_to_legal_moves:
+            #     hash_to_legal_moves[board_hash] = current_state.generate_legal_moves()
+            # possible_moves = hash_to_legal_moves[board_hash]
+            # TODO - put hashing back in when it works
 
-            possible_moves = current_state.generate_legal_moves()  # hash_to_legal_moves[board_hash]
+            possible_moves = current_state.generate_legal_moves()
             action = self.rollout_policy(current_state, possible_moves)
             # print('v.to_play=' + str(current_state.to_play))
             current_state.move(action[0], action[1], action[2], action[3])
 
+        if current_state.is_game_over() != 2:
+            evaluation = count_material_evaluation(current_state.board)
+            if evaluation >= WINNING_POSITION_VALUE:
+                result = 1
+            elif evaluation <= -WINNING_POSITION_VALUE:
+                result = -1
+            else:
+                result = 0
+        else:
+            result = current_state.is_game_over()
+
         # 1 for white win, -1 for black win, 0 for draw
         # should probably change what is returned here but leaving it for now
-        return current_state.is_game_over()
+        return result
 
     def rollout_policy(self, model, possible_moves):
         # the example uses random rollout but we are not using that
         # we're going to use an evaluation function like in the greedy AI
         return get_greedy_move(model, possible_moves)
 
-    def tree_policy(self, c=1):
+    def tree_policy(self, c=C_CONSTANT):
 
         # SELECTION:
         if len(self.untried_actions) == 0:

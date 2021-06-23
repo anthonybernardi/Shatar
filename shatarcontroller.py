@@ -29,6 +29,8 @@ class ShatarController(object):
         selected_piece = None
         drop_pos = None
 
+        view.draw(screen, board, self.model.last_moved_from, self.model.last_moved_to, selected_piece)
+
         while self.model.is_game_over() == 2:
             if self.model.to_play and not white_playable:
                 move = white_player.get_move(self.model)
@@ -131,7 +133,7 @@ def main():
 
     white_player = None
     black_player = MCTSPlayer(False)
-    black_player.set_simulation_number(10)
+    # black_player.set_simulation_number(10)
 
     controller = ShatarController(model)
     controller.play_game(white_player, black_player)
