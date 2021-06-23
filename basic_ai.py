@@ -274,53 +274,77 @@ black_bishop = 10
 black_tiger = 11
 black_king = 12
 
+table = [8][8][12]
+
 
 def init_zobrist():
     # fill a table of random numbers/bitstrings
-    table = [64][12]
-    for i in range(64):  # loop over the board, represented as a linear array
-        for j in range(12):  # loop over the pieces
-            table[i][j] = random.getrandbits(64)
+    for i in range(8):  # loop over the board
+        for j in range(8):
+            for k in range(12):  # loop over the pieces
+                table[i][j][k] = random.getrandbits(64)
 
 
 def hash(board, to_play):
     h = 0
-    if to_play:
-        h = 1
 
-    for i in range(8):  # loop over the board, represented as a linear array
+    # if the table hasn't been initialized yet
+    if table[1][1][0] is None:
+        init_zobrist()
+
+    for i in range(8):  # loop over the board
         for j in range(8):
             if board[i][j] is not None:
                 piece_hash = 0
                 if board[i][j].__str__() == 'P':
-                    piece_hash = white_pawn
+                    # piece_hash = white_pawn
+                    piece_hash = table[i][j][0]
                 if board[i][j].__str__() == 'R':
-                    piece_hash = white_rook
+                    # piece_hash = white_rook
+                    piece_hash = table[i][j][1]
                 if board[i][j].__str__() == 'N':
-                    piece_hash = white_knight
+                    # piece_hash = white_knight
+                    piece_hash = table[i][j][2]
                 if board[i][j].__str__() == 'B':
-                    piece_hash = white_bishop
+                    # piece_hash = white_bishop
+                    piece_hash = table[i][j][3]
                 if board[i][j].__str__() == 'Q':
-                    piece_hash = white_tiger
+                    # piece_hash = white_tiger
+                    piece_hash = table[i][j][4]
                 if board[i][j].__str__() == 'K':
-                    piece_hash = white_king
+                    # piece_hash = white_king
+                    piece_hash = table[i][j][5]
                 if board[i][j].__str__() == 'p':
-                    piece_hash = black_pawn
+                    # piece_hash = black_pawn
+                    piece_hash = table[i][j][6]
                 if board[i][j].__str__() == 'r':
-                    piece_hash = black_rook
+                    # piece_hash = black_rook
+                    piece_hash = table[i][j][7]
                 if board[i][j].__str__() == 'n':
-                    piece_hash = black_knight
+                    # piece_hash = black_knight
+                    piece_hash = table[i][j][8]
                 if board[i][j].__str__() == 'b':
-                    piece_hash = black_bishop
+                    # piece_hash = black_bishop
+                    piece_hash = table[i][j][9]
                 if board[i][j].__str__() == 'q':
-                    piece_hash = black_tiger
+                    # piece_hash = black_tiger
+                    piece_hash = table[i][j][10]
                 if board[i][j].__str__() == 'k':
-                    piece_hash = black_king
+                    # piece_hash = black_king
+                    piece_hash = table[i][j][11]
 
                 # h = h XOR table[i][j]
                 h = h ^ piece_hash
 
-    return h
+    # we can't just hash the board state to legal moves because the same board state could occur
+    # but it could be white's turn one time it's seen and black's turn another time
+
+    if to_play:
+        string_hash = '0' + str(h)
+    else:
+        string_hash = '1' + str(h)
+
+    return string_hash #h
 
 
 class GameTree:
