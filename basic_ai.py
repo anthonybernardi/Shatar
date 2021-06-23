@@ -8,7 +8,10 @@ from shatar import ShatarModel
 MATERIAL_VALUE = {'k': 0, 'K': 0, 'p': -1, 'P': 1, 'q': -7, 'Q': 7, 'r': -5, 'R': 5, 'b': -3, 'B': 3, 'n': -3, 'N': 3}
 MOVES_PER_SIMULATION = 50
 WINNING_POSITION_VALUE = 2
-C_CONSTANT = 4
+C_CONSTANT = 1
+total_arm_pulls = 0
+
+
 
 
 def count_material_evaluation(board):
@@ -388,13 +391,14 @@ class GameTree:
     def is_fully_expanded(self):
         return len(self.untried_actions) == 0
 
-    def best_child(self, c=1):
-        max_win_percentage = 0
+    def best_child(self):
+        max_win_percentage = float('-inf')
         best_children = []
 
         for child in self.children:
             win_percentage = child.num_wins / child.num_sims
 
+            print(str(child.parent_action) + ': ' + str(win_percentage))
             if win_percentage > max_win_percentage:
                 best_children = []
                 max_win_percentage = win_percentage
@@ -449,7 +453,7 @@ class GameTree:
         if len(self.untried_actions) == 0:
             # if no untried children, calculate best ucb1
 
-            max_of_ucb = 0
+            max_of_ucb = float('-inf')
             best_children = []
 
             for child in self.children:
@@ -459,8 +463,9 @@ class GameTree:
                 #     ni = 0.0001
                 xi = child.num_wins / ni
 
+                global total_arm_pulls
                 # the selection equation           # this might be wrong
-                ucb = xi + c * math.sqrt(2 * math.log(self.num_sims) / ni)
+                ucb = xi + c * math.sqrt(2 * math.log(total_arm_pulls) / ni)
 
                 if ucb > max_of_ucb:
                     best_children = []
@@ -498,14 +503,46 @@ class GameTree:
             v = self.tree_policy()
 
             print(i)
+            # if i % 1000 == 0:
+            #     print(i)
 
             # simulate on the child
             reward = v.simulation()
-
-            # backpropagate from the child
             v.backpropagate(reward)
 
+            # reward = v.alpha_simulation()
+            # v.alpha_backpropagate(reward)
+
+            global total_arm_pulls
+            total_arm_pulls += 1
+
+            # backpropagate from the child
+            # v.backpropagate(reward)
+
         return self.best_child()
+
+    def alpha_simulation(self):
+        evaluation = count_material_evaluation(self.model.board)
+        return evaluation
+
+        # if evaluation >= WINNING_POSITION_VALUE:
+        #     result = 1
+        # elif evaluation <= -WINNING_POSITION_VALUE:
+        #     result = -1
+        # else:
+        #     result = 0
+        # return result
+
+    def alpha_backpropagate(self, reward):
+        self.num_sims += 1
+
+        if not self.white:
+            reward *= -1
+
+        self.num_wins += reward
+
+        if self.parent:
+            self.parent.backpropagate(reward)
 
     def model_copier(self):
         return model_copier(self.model)

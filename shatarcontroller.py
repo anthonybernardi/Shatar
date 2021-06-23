@@ -133,7 +133,7 @@ def main():
 
     white_player = None
     black_player = MCTSPlayer(False)
-    # black_player.set_simulation_number(10)
+    # black_player.set_simulation_number(100)
 
     controller = ShatarController(model)
     controller.play_game(white_player, black_player)
