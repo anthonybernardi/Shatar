@@ -160,6 +160,8 @@ class MCTSPlayer(ShatarAI):
         if model.to_play is not self.root.model.to_play:
             self.root = self.root.update_opponents_turn(model)
 
+        print(self.simulation_number)
+
         selected_node = self.root.best_action(self.simulation_number)
         self.root = selected_node
 
@@ -177,71 +179,76 @@ def get_greedy_move(model, candidate_moves):
     """
     best_moves_to_choose_from = []
 
+    #print('in ggm')
+    #print(candidate_moves)
+
     board = model.get_board()
     board_hash = hash(board, model.to_play)
 
-    if board_hash in hash_to_best_moves:
-        best_moves_to_choose_from = hash_to_best_moves[board_hash]
-    else:
+    #if board_hash in hash_to_best_moves:
+        #best_moves_to_choose_from = hash_to_best_moves[board_hash]
+    #else:
+
+
         # if we have not evaluated this board before
 
         # Set up the first one so that I can max it later
-        best_move = candidate_moves[0]
+    best_move = candidate_moves[0]
 
-        test_model = model_copier(model)
-        test_model.move(best_move[0], best_move[1], best_move[2], best_move[3])
+    test_model = model_copier(model)
+    test_model.move(best_move[0], best_move[1], best_move[2], best_move[3])
 
-        test_board = test_model.get_board()
+    test_board = test_model.get_board()
         # test_board_hash = hash(test_board, test_model.to_play)
 
-        best_move_eval = count_material_evaluation(test_board)
-        best_moves_to_choose_from.append(best_move)
+    best_move_eval = count_material_evaluation(test_board)
+    best_moves_to_choose_from.append(best_move)
 
-        for move in candidate_moves:
-            test_model = model_copier(model)
-            test_model.move(move[0], move[1], move[2], move[3])
+    for move in candidate_moves:
+        test_model = model_copier(model)
+        test_model.move(move[0], move[1], move[2], move[3])
 
-            test_board = test_model.get_board()
-            test_board_hash = hash(test_board, test_model.to_play)
+        test_board = test_model.get_board()
+        test_board_hash = hash(test_board, test_model.to_play)
 
-            if test_board_hash not in hash_to_eval:
-                hash_to_eval[test_board_hash] = count_material_evaluation(test_model.get_board())
+        if test_board_hash not in hash_to_eval:
+            hash_to_eval[test_board_hash] = count_material_evaluation(test_model.get_board())
 
-            curr_eval = hash_to_eval[test_board_hash]
+        curr_eval = hash_to_eval[test_board_hash]
 
-            if test_board_hash not in hash_to_is_game_over:
-                hash_to_is_game_over[test_board_hash] = test_model.is_game_over()
-            gg = hash_to_is_game_over[test_board_hash]
+        if test_board_hash not in hash_to_is_game_over:
+            hash_to_is_game_over[test_board_hash] = test_model.is_game_over()
+        gg = hash_to_is_game_over[test_board_hash]
 
             # curr_eval = count_material_evaluation(test_model.board)
             # gg = test_model.is_game_over()
 
-            if model.to_play:
+        if model.to_play:
 
-                if gg == 1:
-                    return move
-                if gg == -1 or 0:
-                    continue
+            if gg == 1:
+                return move
+            if gg == -1 or 0:
+                continue
 
-                if curr_eval == best_move_eval:
-                    best_moves_to_choose_from.append(move)
-                elif curr_eval > best_move_eval:
-                    best_move = move
-                    best_move_eval = curr_eval
-                    best_moves_to_choose_from = [move]
-            else:
+            if curr_eval == best_move_eval:
+                best_moves_to_choose_from.append(move)
+            elif curr_eval > best_move_eval:
+                best_move = move
+                best_move_eval = curr_eval
+                best_moves_to_choose_from = [move]
+        else:
 
-                if gg == -1:
-                    return move
-                if gg == 1 or 0:
-                    continue
+            if gg == -1:
+                return move
+            if gg == 1 or 0:
+                continue
 
-                if curr_eval == best_move_eval:
-                    best_moves_to_choose_from.append(move)
-                elif curr_eval < best_move_eval:
-                    best_move = move
-                    best_move_eval = curr_eval
-                    best_moves_to_choose_from = [move]
+            if curr_eval == best_move_eval:
+                best_moves_to_choose_from.append(move)
+            elif curr_eval < best_move_eval:
+                best_move = move
+                best_move_eval = curr_eval
+                best_moves_to_choose_from = [move]
 
     hash_to_best_moves[board_hash] = best_moves_to_choose_from
     return random.choice(best_moves_to_choose_from)
@@ -278,20 +285,21 @@ table = [[[None for k in range(12)] for j in range(8)] for i in range(8)]
 
 def init_zobrist():
     # fill a table of random numbers/bitstrings
+    #print(table)
     for i in range(8):  # loop over the board
         for j in range(8):
             for k in range(12):  # loop over the pieces
-                global table
+
                 table[i][j][k] = random.getrandbits(64)
+    #print(table[0][0][0])
 
 
 def hash(board, to_play):
     h = 0
 
-    global table
     # if the table hasn't been initialized yet
-    if table[1][1][0] is None:
-        init_zobrist()
+    #if table[1][1][0] is None:
+        #init_zobrist()
 
     for i in range(8):  # loop over the board
         for j in range(8):
@@ -344,6 +352,8 @@ def hash(board, to_play):
         string_hash = '0' + str(h)
     else:
         string_hash = '1' + str(h)
+
+    #print(string_hash)
 
     return string_hash  # h
 
@@ -442,11 +452,11 @@ class GameTree:
             board_hash = hash(current_state.board, current_state.to_play)
             if board_hash not in hash_to_legal_moves:
                 hash_to_legal_moves[board_hash] = current_state.generate_legal_moves()
-            possible_moves = hash_to_legal_moves[board_hash]
+            possible_moves = current_state.generate_legal_moves() #hash_to_legal_moves[board_hash]
 
             # possible_moves = current_state.generate_legal_moves()
-            # action = self.rollout_policy(current_state, possible_moves)
-            action = random.choice(possible_moves)
+            action = self.rollout_policy(current_state, possible_moves)
+            #action = random.choice(possible_moves)
             # print('v.to_play=' + str(current_state.to_play))
             current_state.move(action[0], action[1], action[2], action[3])
 
@@ -502,7 +512,11 @@ class GameTree:
         else:
             # we have untried children so greedily choose one
             move = get_greedy_move(model_copier(self.model), self.untried_actions)
+            #print(self.untried_actions)
+            #print(move)
+            #print(move in self.untried_actions)
             self.untried_actions.remove(move)
+            #print(len(self.untried_actions))
             new_model = self.model_copier()
             new_model.move(move[0], move[1], move[2], move[3])
             current_node = GameTree(new_model, parent=self, parent_action=move, white=self.white)
@@ -520,12 +534,13 @@ class GameTree:
 
     def best_action(self, simulation_no):
 
+        print(simulation_no)
         for i in range(simulation_no):
             # gets the next
             # child which is selection and also expansion
             v = self.tree_policy()
 
-            # print(i)
+            print(i)
             if i % 100 == 0:
                 print(i)
 
