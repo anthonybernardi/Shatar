@@ -151,6 +151,8 @@ class MCTSPlayer(ShatarAI):
         self.root = None
         self.simulation_number = 100
 
+        init_zobrist()
+
     def get_move(self, model):
         if model.to_play is not self.white:
             raise ValueError("Trying to play on wrong turn!")
@@ -274,23 +276,19 @@ black_bishop = 10
 black_tiger = 11
 black_king = 12
 
-table = [8][8][12]
-
+table = []
 
 def init_zobrist():
     # fill a table of random numbers/bitstrings
     for i in range(8):  # loop over the board
+        table.append([])
         for j in range(8):
+            table[i].append([])
             for k in range(12):  # loop over the pieces
-                table[i][j][k] = random.getrandbits(64)
-
+                table[i][j].append(random.getrandbits(64))
 
 def hash(board, to_play):
     h = 0
-
-    # if the table hasn't been initialized yet
-    if table[1][1][0] is None:
-        init_zobrist()
 
     for i in range(8):  # loop over the board
         for j in range(8):
