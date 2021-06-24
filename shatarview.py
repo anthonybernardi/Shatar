@@ -2,6 +2,11 @@ import pygame
 from shatar import ShatarModel, fen_to_board
 from pieces import King, Pawn, Tiger
 
+# SOURCE FOR THIS DESIGN:
+# https://stackoverflow.com/questions/56984542/is-there-an-effiecient-way-of-making-a-function-to-drag-and-drop-multiple-pngs
+
+
+
 TILESIZE = 72
 BOARD_POS = (0, 0)
 
