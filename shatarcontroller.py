@@ -1,7 +1,7 @@
 import pygame
 from shatarview import ShatarView, get_square_under_mouse, draw_drag
 from shatar import ShatarModel, fen_to_board
-import basic_ai
+from basic_ai import MCTSPlayer, GreedyPlayer, PacifistPlayer, RandomPlayer, count_material_evaluation
 from time import sleep
 from shatarview import TILESIZE
 
@@ -22,12 +22,12 @@ def score_statement(score):
     # print the score / who is winning
     # negative score means black is winning
     if score < 0:
-        print('black is winning by ' + str(abs(score)) + '!')
+        print('black is up ' + str(abs(score)) + ' points of material!')
     # positive score means white is winning
     elif score > 0:
-        print('white is winning by ' + str(score) + '!')
+        print('white is up ' + str(score) + ' points of material!')
     else:
-        print('players are currently tied!')
+        print('the material count is even!')
 
 
 class ShatarController(object):
@@ -61,7 +61,7 @@ class ShatarController(object):
                 self.model.move(move[0], move[1], move[2], move[3])
                 board = self.model.get_board()
                 print('white move took ' + str(clock.get_rawtime() / 1000) + ' seconds')
-                score = basic_ai.count_material_evaluation(self.model.get_board())
+                score = count_material_evaluation(self.model.get_board())
                 score_statement(score)
             elif not self.model.to_play and not black_playable:
                 clock.tick()
@@ -71,7 +71,7 @@ class ShatarController(object):
                 self.model.move(move[0], move[1], move[2], move[3])
                 board = self.model.get_board()
                 print('black move took ' + str(clock.get_rawtime() / 1000) + ' seconds')
-                score = basic_ai.count_material_evaluation(self.model.get_board())
+                score = count_material_evaluation(self.model.get_board())
                 score_statement(score)
 
             piece, x, y = get_square_under_mouse(self.model.get_board())
