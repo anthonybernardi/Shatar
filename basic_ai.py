@@ -144,17 +144,18 @@ class MCTSPlayer(ShatarAI):
     board state that it sees in dicts. To save space/time, we're going to hash boards.
     """
 
-    def __init__(self, white):
+    def __init__(self, white, random_rollout):
         super().__init__(white)
         self.root = None
         self.simulation_number = 100
+        self.random_rollout = random_rollout
 
     def get_move(self, model):
         if model.to_play is not self.white:
             raise ValueError("Trying to play on wrong turn!")
 
         if self.root is None:
-            self.root = GameTree(model=model_copier(model), white=self.white)
+            self.root = GameTree(model=model_copier(model), white=self.white, random_rollout=self.random_rollout)
 
         if model.to_play is not self.root.model.to_play:
             self.root = self.root.update_opponents_turn(model)
@@ -359,7 +360,7 @@ class GameTree:
     A class representing a tree in Monte Carlo tree search
     """
 
-    def __init__(self, model, parent=None, parent_action=None, white=True):
+    def __init__(self, model, parent=None, parent_action=None, white=True, random_rollout=True):
         self.white = white
         self.parent = parent
         self.model = model
@@ -370,6 +371,7 @@ class GameTree:
         self.children = []
         self.num_wins = 0
         self.num_sims = 0
+        self.random_rollout = random_rollout
 
     # https://ai-boson.github.io/mcts/
     def get_untried_actions(self):
@@ -481,8 +483,11 @@ class GameTree:
         # the example uses random rollout but we are not using that
         # we're going to use an evaluation function like in the greedy AI
 
-        return random.choice(possible_moves)
-        # return get_greedy_move(model, possible_moves)
+        if self.random_rollout:
+            return random.choice(possible_moves)
+        else:
+            return get_greedy_move(model, possible_moves)
+
 
     def tree_policy(self, c=C_CONSTANT):
 

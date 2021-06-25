@@ -1,12 +1,33 @@
 import pygame
 from shatarview import ShatarView, get_square_under_mouse, draw_drag
 from shatar import ShatarModel, fen_to_board
-from basic_ai import RandomPlayer, GreedyPlayer, PacifistPlayer, MCTSPlayer
+import basic_ai
 from time import sleep
 from shatarview import TILESIZE
 
 BOARD_POS = (0, 0)
 SLEEP_TIME = .1
+
+
+def win_statement(num):
+    if num == 0:
+        print('Draw!')
+    if num == -1:
+        print('Black wins!')
+    if num == 1:
+        print('White wins!')
+
+
+def score_statement(score):
+    # print the score / who is winning
+    # negative score means black is winning
+    if score < 0:
+        print('black is winning by ' + str(abs(score)) + '!')
+    # positive score means white is winning
+    elif score > 0:
+        print('white is winning by ' + str(score) + '!')
+    else:
+        print('players are currently tied!')
 
 
 class ShatarController(object):
@@ -33,15 +54,25 @@ class ShatarController(object):
 
         while self.model.is_game_over() == 2:
             if self.model.to_play and not white_playable:
+                clock.tick()
                 move = white_player.get_move(self.model)
+                clock.tick()
                 sleep(SLEEP_TIME)
                 self.model.move(move[0], move[1], move[2], move[3])
                 board = self.model.get_board()
+                print('white move took ' + str(clock.get_rawtime() / 1000) + ' seconds')
+                score = basic_ai.count_material_evaluation(self.model.get_board())
+                score_statement(score)
             elif not self.model.to_play and not black_playable:
+                clock.tick()
                 move = black_player.get_move(self.model)
+                clock.tick()
                 sleep(SLEEP_TIME)
                 self.model.move(move[0], move[1], move[2], move[3])
                 board = self.model.get_board()
+                print('black move took ' + str(clock.get_rawtime() / 1000) + ' seconds')
+                score = basic_ai.count_material_evaluation(self.model.get_board())
+                score_statement(score)
 
             piece, x, y = get_square_under_mouse(self.model.get_board())
             events = pygame.event.get()
@@ -77,7 +108,8 @@ class ShatarController(object):
             pygame.display.flip()
             clock.tick(60)
 
-        print(self.model.is_game_over())
+        # print(self.model.is_game_over())
+        win_statement(self.model.is_game_over)
 
         while True:
             events = pygame.event.get()
@@ -132,7 +164,10 @@ def main():
     model = ShatarModel()
 
     white_player = None
-    black_player = MCTSPlayer(False)
+    # white_player = RandomPlayer(white=True)
+    # white_player = GreedyPlayer(white=True)
+    # white_player = PacifistPlayer(white=True)
+    black_player = MCTSPlayer(white=False, random_rollout=True)
     black_player.set_simulation_number(400)
 
     controller = ShatarController(model)
