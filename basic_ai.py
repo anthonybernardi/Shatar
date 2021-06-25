@@ -177,15 +177,7 @@ def get_greedy_move(model, candidate_moves):
     """
     best_moves_to_choose_from = []
 
-    # print('in ggm')
-    # print(candidate_moves)
-
-    # board = model.get_board()
     board_hash = hash(model)
-
-    # if board_hash in hash_to_best_moves:
-    #   best_moves_to_choose_from = hash_to_best_moves[board_hash]
-    # else:
 
     # if we have not evaluated this board before
 
@@ -196,7 +188,6 @@ def get_greedy_move(model, candidate_moves):
     test_model.move(best_move[0], best_move[1], best_move[2], best_move[3])
 
     test_board = test_model.get_board()
-    # test_board_hash = hash(test_board, test_model.to_play)
 
     best_move_eval = count_material_evaluation(test_board)
     best_moves_to_choose_from.append(best_move)
@@ -215,9 +206,6 @@ def get_greedy_move(model, candidate_moves):
         if test_board_hash not in hash_to_is_game_over:
             hash_to_is_game_over[test_board_hash] = test_model.is_game_over()
         gg = hash_to_is_game_over[test_board_hash]
-
-        # curr_eval = count_material_evaluation(test_model.board)
-        # gg = test_model.is_game_over()
 
         if model.to_play:
 
@@ -254,13 +242,13 @@ def get_greedy_move(model, candidate_moves):
 # https://en.wikipedia.org/wiki/Zobrist_hashing
 # https://levelup.gitconnected.com/zobrist-hashing-305c6c3c54d0
 
-# https://github.com/niklasf/python-chess/blob/master/chess/polyglot.py
-# here's an example I don't really understand that uses some weird libraries? idk
-
 # will use transposition tables (HashMap) as a cache to store already seen board positions
 # these tables are dicts: hash_to_legal_moves, hash_to_best_moves, hash_to_is_game_over
 
 # used pseudocode on Wikipedia to write two functions below
+
+## NOTE: We didn't end up using this in the final design, but we're leaving it because we spent
+## a while working on it / it could be useful if we want to modify the project in the future
 
 white_pawn = 1
 white_rook = 2
@@ -365,7 +353,7 @@ class GameTree:
         self.parent = parent
         self.model = model
         self.parent_action = parent_action
-        self.board_hash = hash(self.model)  # hash(self.model.board, self.model.to_play)
+        self.board_hash = hash(self.model)
         self.untried_actions = self.get_untried_actions()
         # children: array of GameTrees
         self.children = []
@@ -379,7 +367,6 @@ class GameTree:
             hash_to_legal_moves[self.board_hash] = self.model.generate_legal_moves()
 
         return hash_to_legal_moves[self.board_hash]
-        # return self.model.generate_legal_moves()
 
     def expansion(self):
         """ Returns a random untried child node
@@ -427,7 +414,7 @@ class GameTree:
         for child in self.children:
             win_percentage = child.num_wins / child.num_sims
 
-            print(str(child.parent_action) + ': ' + str(win_percentage))
+            # print(str(child.parent_action) + ': ' + str(win_percentage))
             if win_percentage > max_win_percentage:
                 best_children = []
                 max_win_percentage = win_percentage
@@ -435,7 +422,11 @@ class GameTree:
             elif max_win_percentage == win_percentage:
                 best_children.append(child)
 
-        return random.choice(best_children)
+        if len(best_children) > 0:
+            return random.choice(best_children)
+        else:
+            # we're at a terminal node
+            return self
 
     # rollout
     def simulation(self):
@@ -459,7 +450,6 @@ class GameTree:
                 # print('ACTUAL LEGAL MOVES: ' + str(gen))
                 # print("*" * 20)
 
-            # possible_moves = current_state.generate_legal_moves()
             action = self.rollout_policy(current_state, possible_moves)
             # print('v.to_play=' + str(current_state.to_play))
             current_state.move(action[0], action[1], action[2], action[3])
@@ -480,14 +470,12 @@ class GameTree:
         return result
 
     def rollout_policy(self, model, possible_moves):
-        # the example uses random rollout but we are not using that
-        # we're going to use an evaluation function like in the greedy AI
 
+        # two different rollout policies decided by self.random_rollout
         if self.random_rollout:
             return random.choice(possible_moves)
         else:
             return get_greedy_move(model, possible_moves)
-
 
     def tree_policy(self, c=C_CONSTANT):
 
@@ -516,16 +504,16 @@ class GameTree:
                 elif ucb == max_of_ucb:
                     best_children.append(child)
 
-            current_node = random.choice(best_children)
+            if len(best_children) > 0:
+                current_node = random.choice(best_children)
+            else:
+                # we're at a terminal node
+                return self
 
         else:
             # we have untried children so greedily choose one
             move = get_greedy_move(model_copier(self.model), self.untried_actions)
-            # print(self.untried_actions)
-            # print(move)
-            # print(move in self.untried_actions)
             self.untried_actions.remove(move)
-            # print(len(self.untried_actions))
             new_model = self.model_copier()
             new_model.move(move[0], move[1], move[2], move[3])
             current_node = GameTree(new_model, parent=self, parent_action=move, white=self.white)
@@ -549,8 +537,8 @@ class GameTree:
             v = self.tree_policy()
 
             # print(i)
-            if i % 100 == 0:
-                print(i)
+            # if i % 100 == 0:
+            # print('completed simulation ' + str(i) + '...')
 
             # simulate on the child and backpropagate
             reward = v.simulation()
@@ -577,8 +565,6 @@ class GameTree:
             self.num_wins += 1
         else:
             self.num_wins += 0.5
-
-        # self.num_wins += result
 
         if self.parent:
             self.parent.backpropagate(result)

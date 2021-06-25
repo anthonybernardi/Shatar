@@ -124,6 +124,7 @@ class ShatarController(object):
 
     def simulate_game(self, white_player, black_player):
         sim_model = ShatarModel(board=self.model.get_board(), to_play=self.model.to_play)
+        prev_score = 0
 
         while sim_model.is_game_over() == 2:
             if sim_model.to_play:
@@ -131,9 +132,21 @@ class ShatarController(object):
             else:
                 move = black_player.get_move(sim_model)
 
+            if move is None:
+                # sim_model.to_play = not sim_model.to_play
+                continue
+
             sim_model.move(move[0], move[1], move[2], move[3])
+            score = count_material_evaluation(sim_model.get_board())
+
+            # only print when the score changes
+            if score != prev_score:
+                score_statement(score)
+                prev_score = score
 
         # print(f'Game had: {sim_model.total_moves} total moves')
+
+        win_statement(sim_model.is_game_over())
 
         return sim_model.is_game_over()
 
@@ -154,6 +167,8 @@ def simulate_n_games(white_player, black_player, n):
         elif w == -1:
             black_win += 1
 
+        print(f'game {i} finished')
+
     print(f'White won: {white_win} games')
     print(f'Black won: {black_win} games')
     print(f'There were: {draw} drawn games')
@@ -163,16 +178,16 @@ def main():
     fen = "k6p/7P/8/8/8/8/8/K7"
     model = ShatarModel()
 
-    white_player = None
-    # white_player = RandomPlayer(white=True)
+    #white_player = None
+    white_player = RandomPlayer(white=True)
     # white_player = GreedyPlayer(white=True)
     # white_player = PacifistPlayer(white=True)
-    black_player = MCTSPlayer(white=False, random_rollout=True)
-    black_player.set_simulation_number(400)
+    black_player = MCTSPlayer(white=False, random_rollout=False)
+    black_player.set_simulation_number(100)
 
     controller = ShatarController(model)
-    controller.play_game(white_player, black_player)
-    # simulate_n_games(white_player, black_player, 10)
+    #controller.play_game(white_player, black_player)
+    simulate_n_games(white_player, black_player, 10)
 
 
 if __name__ == '__main__':

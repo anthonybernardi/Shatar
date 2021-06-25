@@ -221,7 +221,6 @@ class ShatarModel(object):
 
         :return: 1 if white wins, 0 if draw, -1 if black wins, 2 if game is not over
         """
-        # TODO - three fold repetition!!!
         # if a player only has a king, it's a DRAW
         if self.only_has_king(self.to_play):
             return 0
@@ -322,6 +321,9 @@ TOUGH_BOARD = [[King(), None, None, None, None, None, None, None],
                [None, Pawn(), None, None, None, None, None, None],
                [Pawn(white=False), None, None, None, None, None, None, None],
                [King(white=False), None, None, None, None, None, None, None]]
+
+
+# tests for FEN methods
 
 # model = ShatarModel()
 # print(model.hash())
