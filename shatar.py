@@ -282,6 +282,37 @@ class ShatarModel(object):
                     count += 1
         return count == 1
 
+    def get_fen(self):
+        h = ''
+        empty_spaces = 0
+
+        for i in range(len(self.board)):
+            for j in range(len(self.board[0])):
+                piece = self.board[7 - i][j]
+                if piece is None:
+                    empty_spaces += 1
+                else:
+                    if empty_spaces > 0:
+                        h += str(empty_spaces)
+                        empty_spaces = 0
+                    h += str(piece)
+                    empty_spaces = 0
+            if empty_spaces > 0:
+                h += str(empty_spaces)
+                empty_spaces = 0
+
+            if i < len(self.board) - 1:
+                h += '/'
+
+        if self.to_play:
+            h += ' 1'
+        else:
+            h += ' 0'
+        return h
+
+    def __hash__(self):
+        return hash(self.get_fen())
+
 
 TOUGH_BOARD = [[King(), None, None, None, None, None, None, None],
                [Tiger(), None, None, None, None, None, None, None],
@@ -292,7 +323,16 @@ TOUGH_BOARD = [[King(), None, None, None, None, None, None, None],
                [Pawn(white=False), None, None, None, None, None, None, None],
                [King(white=False), None, None, None, None, None, None, None]]
 
-# model = ShatarModel(board=TOUGH_BOARD)
+# model = ShatarModel()
+# print(model.hash())
+# print(hash(model))
+#
+# model2 = ShatarModel()
+# print(hash(model2))
+#
+# model3 = ShatarModel()
+# model3.to_play = False
+# print(hash(model3))
 # print(model.is_game_over())
 # model.move(1, 0, 6, 0)
 # r = model.is_game_over()

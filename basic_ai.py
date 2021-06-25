@@ -6,7 +6,7 @@ import random
 from shatar import ShatarModel
 
 MATERIAL_VALUE = {'k': 0, 'K': 0, 'p': -1, 'P': 1, 'q': -7, 'Q': 7, 'r': -5, 'R': 5, 'b': -3, 'B': 3, 'n': -3, 'N': 3}
-MOVES_PER_SIMULATION = 60
+MOVES_PER_SIMULATION = 50
 WINNING_POSITION_VALUE = 3
 C_CONSTANT = 1.414
 total_arm_pulls = 0
@@ -148,7 +148,6 @@ class MCTSPlayer(ShatarAI):
         super().__init__(white)
         self.root = None
         self.simulation_number = 100
-        init_zobrist()
 
     def get_move(self, model):
         if model.to_play is not self.white:
@@ -159,8 +158,6 @@ class MCTSPlayer(ShatarAI):
 
         if model.to_play is not self.root.model.to_play:
             self.root = self.root.update_opponents_turn(model)
-
-        print(self.simulation_number)
 
         selected_node = self.root.best_action(self.simulation_number)
         self.root = selected_node
@@ -179,27 +176,26 @@ def get_greedy_move(model, candidate_moves):
     """
     best_moves_to_choose_from = []
 
-    #print('in ggm')
-    #print(candidate_moves)
+    # print('in ggm')
+    # print(candidate_moves)
 
-    board = model.get_board()
-    board_hash = hash(board, model.to_play)
+    # board = model.get_board()
+    board_hash = hash(model)
 
-    #if board_hash in hash_to_best_moves:
-        #best_moves_to_choose_from = hash_to_best_moves[board_hash]
-    #else:
+    # if board_hash in hash_to_best_moves:
+    #   best_moves_to_choose_from = hash_to_best_moves[board_hash]
+    # else:
 
+    # if we have not evaluated this board before
 
-        # if we have not evaluated this board before
-
-        # Set up the first one so that I can max it later
+    # Set up the first one so that I can max it later
     best_move = candidate_moves[0]
 
     test_model = model_copier(model)
     test_model.move(best_move[0], best_move[1], best_move[2], best_move[3])
 
     test_board = test_model.get_board()
-        # test_board_hash = hash(test_board, test_model.to_play)
+    # test_board_hash = hash(test_board, test_model.to_play)
 
     best_move_eval = count_material_evaluation(test_board)
     best_moves_to_choose_from.append(best_move)
@@ -208,8 +204,7 @@ def get_greedy_move(model, candidate_moves):
         test_model = model_copier(model)
         test_model.move(move[0], move[1], move[2], move[3])
 
-        test_board = test_model.get_board()
-        test_board_hash = hash(test_board, test_model.to_play)
+        test_board_hash = hash(test_model)
 
         if test_board_hash not in hash_to_eval:
             hash_to_eval[test_board_hash] = count_material_evaluation(test_model.get_board())
@@ -220,8 +215,8 @@ def get_greedy_move(model, candidate_moves):
             hash_to_is_game_over[test_board_hash] = test_model.is_game_over()
         gg = hash_to_is_game_over[test_board_hash]
 
-            # curr_eval = count_material_evaluation(test_model.board)
-            # gg = test_model.is_game_over()
+        # curr_eval = count_material_evaluation(test_model.board)
+        # gg = test_model.is_game_over()
 
         if model.to_play:
 
@@ -279,83 +274,84 @@ black_bishop = 10
 black_tiger = 11
 black_king = 12
 
+
 # table = [8][8][12]
-table = [[[None for k in range(12)] for j in range(8)] for i in range(8)]
+# table = [[[None for k in range(12)] for j in range(8)] for i in range(8)]
 
 
-def init_zobrist():
-    # fill a table of random numbers/bitstrings
-    #print(table)
-    for i in range(8):  # loop over the board
-        for j in range(8):
-            for k in range(12):  # loop over the pieces
-
-                table[i][j][k] = random.getrandbits(64)
-    #print(table[0][0][0])
-
-
-def hash(board, to_play):
-    h = 0
-
-    # if the table hasn't been initialized yet
-    #if table[1][1][0] is None:
-        #init_zobrist()
-
-    for i in range(8):  # loop over the board
-        for j in range(8):
-            if board[i][j] is not None:
-                piece_hash = 0
-                if board[i][j].__str__() == 'P':
-                    # piece_hash = white_pawn
-                    piece_hash = table[i][j][0]
-                if board[i][j].__str__() == 'R':
-                    # piece_hash = white_rook
-                    piece_hash = table[i][j][1]
-                if board[i][j].__str__() == 'N':
-                    # piece_hash = white_knight
-                    piece_hash = table[i][j][2]
-                if board[i][j].__str__() == 'B':
-                    # piece_hash = white_bishop
-                    piece_hash = table[i][j][3]
-                if board[i][j].__str__() == 'Q':
-                    # piece_hash = white_tiger
-                    piece_hash = table[i][j][4]
-                if board[i][j].__str__() == 'K':
-                    # piece_hash = white_king
-                    piece_hash = table[i][j][5]
-                if board[i][j].__str__() == 'p':
-                    # piece_hash = black_pawn
-                    piece_hash = table[i][j][6]
-                if board[i][j].__str__() == 'r':
-                    # piece_hash = black_rook
-                    piece_hash = table[i][j][7]
-                if board[i][j].__str__() == 'n':
-                    # piece_hash = black_knight
-                    piece_hash = table[i][j][8]
-                if board[i][j].__str__() == 'b':
-                    # piece_hash = black_bishop
-                    piece_hash = table[i][j][9]
-                if board[i][j].__str__() == 'q':
-                    # piece_hash = black_tiger
-                    piece_hash = table[i][j][10]
-                if board[i][j].__str__() == 'k':
-                    # piece_hash = black_king
-                    piece_hash = table[i][j][11]
-
-                # h = h XOR table[i][j]
-                h = h ^ piece_hash
-
-    # we can't just hash the board state to legal moves because the same board state could occur
-    # but it could be white's turn one time it's seen and black's turn another time
-
-    if to_play:
-        string_hash = '0' + str(h)
-    else:
-        string_hash = '1' + str(h)
-
-    #print(string_hash)
-
-    return string_hash  # h
+# def init_zobrist():
+#     # fill a table of random numbers/bitstrings
+#     #print(table)
+#     for i in range(8):  # loop over the board
+#         for j in range(8):
+#             for k in range(12):  # loop over the pieces
+#
+#                 table[i][j][k] = random.getrandbits(64)
+#     #print(table[0][0][0])
+#
+#
+# def hash(board, to_play):
+#     h = 0
+#
+#     # if the table hasn't been initialized yet
+#     #if table[1][1][0] is None:
+#         #init_zobrist()
+#
+#     for i in range(8):  # loop over the board
+#         for j in range(8):
+#             if board[i][j] is not None:
+#                 piece_hash = 0
+#                 if board[i][j].__str__() == 'P':
+#                     # piece_hash = white_pawn
+#                     piece_hash = table[i][j][0]
+#                 if board[i][j].__str__() == 'R':
+#                     # piece_hash = white_rook
+#                     piece_hash = table[i][j][1]
+#                 if board[i][j].__str__() == 'N':
+#                     # piece_hash = white_knight
+#                     piece_hash = table[i][j][2]
+#                 if board[i][j].__str__() == 'B':
+#                     # piece_hash = white_bishop
+#                     piece_hash = table[i][j][3]
+#                 if board[i][j].__str__() == 'Q':
+#                     # piece_hash = white_tiger
+#                     piece_hash = table[i][j][4]
+#                 if board[i][j].__str__() == 'K':
+#                     # piece_hash = white_king
+#                     piece_hash = table[i][j][5]
+#                 if board[i][j].__str__() == 'p':
+#                     # piece_hash = black_pawn
+#                     piece_hash = table[i][j][6]
+#                 if board[i][j].__str__() == 'r':
+#                     # piece_hash = black_rook
+#                     piece_hash = table[i][j][7]
+#                 if board[i][j].__str__() == 'n':
+#                     # piece_hash = black_knight
+#                     piece_hash = table[i][j][8]
+#                 if board[i][j].__str__() == 'b':
+#                     # piece_hash = black_bishop
+#                     piece_hash = table[i][j][9]
+#                 if board[i][j].__str__() == 'q':
+#                     # piece_hash = black_tiger
+#                     piece_hash = table[i][j][10]
+#                 if board[i][j].__str__() == 'k':
+#                     # piece_hash = black_king
+#                     piece_hash = table[i][j][11]
+#
+#                 # h = h XOR table[i][j]
+#                 h = h ^ piece_hash
+#
+#     # we can't just hash the board state to legal moves because the same board state could occur
+#     # but it could be white's turn one time it's seen and black's turn another time
+#
+#     if to_play:
+#         string_hash = '0' + str(h)
+#     else:
+#         string_hash = '1' + str(h)
+#
+#     #print(string_hash)
+#
+#     return string_hash  # h
 
 
 class GameTree:
@@ -368,7 +364,7 @@ class GameTree:
         self.parent = parent
         self.model = model
         self.parent_action = parent_action
-        self.board_hash = hash(self.model.board, self.model.to_play)
+        self.board_hash = hash(self.model)  # hash(self.model.board, self.model.to_play)
         self.untried_actions = self.get_untried_actions()
         # children: array of GameTrees
         self.children = []
@@ -399,8 +395,6 @@ class GameTree:
         return child
 
     def is_terminal_node(self):
-        # return self.model.is_game_over()
-
         if self.board_hash not in hash_to_is_game_over:
             hash_to_is_game_over[self.board_hash] = self.model.is_game_over()
 
@@ -449,14 +443,22 @@ class GameTree:
         # while the game is not over
         while current_state.is_game_over() == 2 and \
                 not (current_state.total_moves - starting_move > MOVES_PER_SIMULATION):
-            board_hash = hash(current_state.board, current_state.to_play)
+            board_hash = hash(current_state)
             if board_hash not in hash_to_legal_moves:
                 hash_to_legal_moves[board_hash] = current_state.generate_legal_moves()
-            possible_moves = current_state.generate_legal_moves() #hash_to_legal_moves[board_hash]
+
+            possible_moves = hash_to_legal_moves[board_hash]
+
+            if len(possible_moves) == 0:
+                # print("*"*20)
+                # print("THIS SHOULD NOT HAPPEN WEE WOO WEE WOO")
+                gen = current_state.generate_legal_moves()
+                possible_moves = gen
+                # print('ACTUAL LEGAL MOVES: ' + str(gen))
+                # print("*" * 20)
 
             # possible_moves = current_state.generate_legal_moves()
             action = self.rollout_policy(current_state, possible_moves)
-            #action = random.choice(possible_moves)
             # print('v.to_play=' + str(current_state.to_play))
             current_state.move(action[0], action[1], action[2], action[3])
 
@@ -478,7 +480,9 @@ class GameTree:
     def rollout_policy(self, model, possible_moves):
         # the example uses random rollout but we are not using that
         # we're going to use an evaluation function like in the greedy AI
-        return get_greedy_move(model, possible_moves)
+
+        return random.choice(possible_moves)
+        # return get_greedy_move(model, possible_moves)
 
     def tree_policy(self, c=C_CONSTANT):
 
@@ -497,7 +501,7 @@ class GameTree:
                 xi = child.num_wins / ni
 
                 global total_arm_pulls
-                # the selection equation           # this might be wrong
+                # the selection equation
                 ucb = xi + c * math.sqrt(2 * math.log(total_arm_pulls) / ni)
 
                 if ucb > max_of_ucb:
@@ -512,11 +516,11 @@ class GameTree:
         else:
             # we have untried children so greedily choose one
             move = get_greedy_move(model_copier(self.model), self.untried_actions)
-            #print(self.untried_actions)
-            #print(move)
-            #print(move in self.untried_actions)
+            # print(self.untried_actions)
+            # print(move)
+            # print(move in self.untried_actions)
             self.untried_actions.remove(move)
-            #print(len(self.untried_actions))
+            # print(len(self.untried_actions))
             new_model = self.model_copier()
             new_model.move(move[0], move[1], move[2], move[3])
             current_node = GameTree(new_model, parent=self, parent_action=move, white=self.white)
@@ -534,17 +538,16 @@ class GameTree:
 
     def best_action(self, simulation_no):
 
-        print(simulation_no)
         for i in range(simulation_no):
             # gets the next
             # child which is selection and also expansion
             v = self.tree_policy()
 
-            print(i)
+            # print(i)
             if i % 100 == 0:
                 print(i)
 
-            # simulate on the child
+            # simulate on the child and backpropagate
             reward = v.simulation()
             v.backpropagate(reward)
 
@@ -553,9 +556,6 @@ class GameTree:
 
             global total_arm_pulls
             total_arm_pulls += 1
-
-            # backpropagate from the child
-            # v.backpropagate(reward)
 
         return self.best_child()
 
@@ -583,7 +583,7 @@ class GameTree:
 
     def update_opponents_turn(self, model):
         for child in self.children:
-            if hash(child.model.board, child.model.to_play) == hash(model.board, model.to_play):
+            if hash(child.model) == hash(model):
                 return child
         return GameTree(model_copier(model), white=self.white)
 
